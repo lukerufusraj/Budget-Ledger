@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Personal Budget</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ AUTH SCREEN ============ -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <h1 class="auth-title">Ledger</h1>
+    <p class="auth-sub">Your budget, kept in one place.</p>
+
+    <form id="auth-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required autocomplete="email">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" required autocomplete="current-password" minlength="6">
+
+      <p id="auth-error" class="auth-error" hidden></p>
+
+      <button type="submit" id="login-btn" class="btn btn-primary">Sign in</button>
+      <button type="button" id="signup-btn" class="btn btn-ghost">Create account</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP SCREEN ============ -->
+<div id="app-screen" class="app-screen" hidden>
+
+  <header class="app-header">
+    <h1>Ledger</h1>
+    <button id="signout-btn" class="btn btn-ghost btn-small">Sign out</button>
+  </header>
+
+  <main class="app-main">
+
+    <!-- Summary tape -->
+    <aside class="tape">
+      <div class="tape-body">
+        <p class="tape-label">Balance</p>
+        <p class="tape-amount" id="balance-amount">€0.00</p>
+
+        <div class="tape-line"></div>
+
+        <p class="tape-row"><span>Income</span><span id="income-amount" class="tape-income">€0.00</span></p>
+        <p class="tape-row"><span>Expenses</span><span id="expense-amount" class="tape-expense">€0.00</span></p>
+
+        <div class="tape-line"></div>
+
+        <p class="tape-label">By category</p>
+        <div id="category-breakdown" class="tape-categories"></div>
+      </div>
+      <div class="tape-edge"></div>
+    </aside>
+
+    <!-- Ledger -->
+    <section class="ledger">
+
+      <form id="entry-form" class="entry-form">
+        <select id="entry-type" required>
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <input type="text" id="entry-desc" placeholder="Description" required>
+        <select id="entry-category" required></select>
+        <input type="number" id="entry-amount" placeholder="0.00" step="0.01" min="0.01" required>
+        <input type="date" id="entry-date" required>
+        <button type="submit" class="btn btn-primary btn-small">Add entry</button>
+      </form>
+
+      <div class="ledger-table-wrap">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th class="col-amount">Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ledger-body">
+            <!-- rows injected by app.js -->
+          </tbody>
+        </table>
+        <p id="empty-state" class="empty-state" hidden>No entries yet. Add your first one above.</p>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- Firebase (compat SDK — simplest for plain JS, no build step needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
