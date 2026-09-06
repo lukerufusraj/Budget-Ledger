@@ -199,15 +199,31 @@ button, input, select {
   font-size: 0.88rem;
   color: var(--ink);
 }
-
+.recurring-panel {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.2rem;
+}
+.recurring-panel summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.recurring-panel form { margin-top: 0.9rem; }
+.recurring-list { list-style: none; padding: 0; margin: 0.8rem 0 0; font-size: 0.85rem; }
+.recurring-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-top: 1px dashed var(--line);
+}
 .ledger-table-wrap {
   background: var(--paper-raised);
   border: 1px solid var(--line);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
 }
 .ledger-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 .ledger-table th {
@@ -241,14 +257,44 @@ button, input, select {
   border-radius: 10px;
   padding: 0.15rem 0.6rem;
 }
-.delete-btn {
+.row-menu {
+  position: relative;
+  text-align: right;
+}
+.kebab-btn {
   background: none;
   border: none;
   color: var(--ink-soft);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.5rem;
+  line-height: 1;
 }
-.delete-btn:hover { color: var(--rust); }
+.kebab-btn:hover { color: var(--ink); }
+.row-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  min-width: 110px;
+  display: flex;
+  flex-direction: column;
+}
+.row-menu-dropdown button {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.row-menu-dropdown button:hover { background: var(--paper); }
+.row-menu-dropdown .delete-option { color: var(--rust); }
 
 .empty-state {
   padding: 2.5rem 1rem;
@@ -267,4 +313,43 @@ button, input, select {
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+}
+/* Tabs */
+.tabs {
+  display: flex;
+  padding: 0 1.8rem;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.8rem 0.2rem;
+  margin-right: 1.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: var(--ink); border-bottom-color: var(--brass); }
+
+/* Envelope view */
+.envelope-view { padding: 1.8rem; }
+.envelope-period { margin-bottom: 1.4rem; }
+.envelope-period h2 { font-family: var(--font-mono); font-size: 1.3rem; margin: 0.2rem 0 0; }
+.envelope-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.8rem; }
+.stat-card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 4px; padding: 1rem 1.2rem; }
+.stat-amount { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; margin: 0.3rem 0 0; }
+.envelope-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.chart-card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 4px; padding: 1.2rem; }
+
+@media (max-width: 800px) {
+  .envelope-stats { grid-template-columns: 1fr; }
+  .envelope-charts { grid-template-columns: 1fr; }
 }
