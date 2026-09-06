@@ -27,8 +27,8 @@
       <p id="auth-error" class="auth-error" hidden></p>
 
       <button type="submit" id="login-btn" class="btn btn-primary">Sign in</button>
-      <button type="button" id="signup-btn" class="btn btn-ghost">Create account</button>
-    </form>
+<button type="button" id="signup-btn" class="btn btn-ghost">Create account</button>
+</form>
   </div>
 </div>
 
@@ -40,7 +40,12 @@
     <button id="signout-btn" class="btn btn-ghost btn-small">Sign out</button>
   </header>
 
-  <main class="app-main">
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="ledger">Ledger</button>
+    <button class="tab-btn" data-view="envelope">Monthly Envelope</button>
+  </nav>
+
+  <main class="app-main" id="view-ledger">
 
     <!-- Summary tape -->
     <aside class="tape">
@@ -64,17 +69,32 @@
     <!-- Ledger -->
     <section class="ledger">
 
+     <details class="recurring-panel">
+  <summary>Recurring monthly expenses</summary>
+  <form id="recurring-form" class="entry-form">
+    <select id="recurring-type" required>
+      <option value="expense">Expense</option>
+      <option value="income">Income</option>
+    </select>
+    <input type="text" id="recurring-desc" placeholder="Description (optional)">
+    <select id="recurring-category" required></select>
+    <input type="number" id="recurring-amount" placeholder="0.00" step="0.01" min="0.01" required>
+    <button type="submit" class="btn btn-primary btn-small">Add recurring</button>
+  </form>
+  <ul id="recurring-list" class="recurring-list"></ul>
+</details>
       <form id="entry-form" class="entry-form">
         <select id="entry-type" required>
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
-        <input type="text" id="entry-desc" placeholder="Description" required>
+        <input type="text" id="entry-desc" placeholder="Description (optional)">
         <select id="entry-category" required></select>
         <input type="number" id="entry-amount" placeholder="0.00" step="0.01" min="0.01" required>
         <input type="date" id="entry-date" required>
-        <button type="submit" class="btn btn-primary btn-small">Add entry</button>
-      </form>
+<button type="submit" id="entry-submit-btn" class="btn btn-primary btn-small">Add entry</button>
+<button type="button" id="cancel-edit-btn" class="btn btn-ghost btn-small" hidden>Cancel</button>
+</form>
 
       <div class="ledger-table-wrap">
         <table class="ledger-table">
@@ -96,13 +116,50 @@
 
     </section>
 
-  </main>
+    </main>
+
+  <section id="view-envelope" class="envelope-view" hidden>
+    <div class="envelope-period">
+      <p class="tape-label">Current envelope</p>
+      <h2 id="envelope-range">—</h2>
+    </div>
+
+    <div class="envelope-stats">
+      <div class="stat-card">
+        <p class="tape-label">Income this period</p>
+        <p class="stat-amount" id="envelope-income">€0.00</p>
+      </div>
+      <div class="stat-card">
+        <p class="tape-label">Spent so far</p>
+        <p class="stat-amount amount-expense" id="envelope-spent">€0.00</p>
+      </div>
+      <div class="stat-card">
+        <p class="tape-label">Remaining</p>
+        <p class="stat-amount" id="envelope-remaining">€0.00</p>
+      </div>
+    </div>
+
+    <div class="envelope-charts">
+      <div class="chart-card">
+        <p class="tape-label">Spending by category (this period)</p>
+        <canvas id="category-chart"></canvas>
+      </div>
+      <div class="chart-card">
+        <p class="tape-label">Income vs expense, past envelopes</p>
+        <canvas id="history-chart"></canvas>
+      </div>
+    </div>
+  </section>
+
 </div>
+
+<!-- Firebase
 
 <!-- Firebase (compat SDK — simplest for plain JS, no build step needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
