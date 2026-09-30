@@ -143,16 +143,20 @@ entryForm.addEventListener("submit", (e) => {
     date: entryDate.value
   };
 
-  if (editingId) {
+    if (editingId) {
     db.collection("users").doc(user.uid).collection("transactions").doc(editingId).update(data);
     cancelEdit();
   } else {
     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     db.collection("users").doc(user.uid).collection("transactions").add(data);
+    if (data.type === "income" && data.category === "Salary") {
+      applyRecurringForSalary(user.uid, data.date);
+    }
     entryDesc.value = "";
     entryAmount.value = "";
   }
-});
+  }
+);
 
 function startEdit(t) {
   editingId = t.id;
@@ -191,10 +195,11 @@ function subscribeToTransactions(uid) {
     .collection("users").doc(uid).collection("transactions")
     .orderBy("date", "desc")
     .onSnapshot((snapshot) => {
-      currentTransactions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+     currentTransactions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       renderLedger(currentTransactions);
-      renderSummary(currentTransactions);
-      applyRecurringForThisMonth(uid);
+      const periodTransactions = getCurrentPeriodTransactions();
+      renderSummary(periodTransactions);
+      renderTapeCategoryChart(periodTransactions);
       if (!viewEnvelope.hidden) renderEnvelopeView();
     });
 }
@@ -347,7 +352,6 @@ function subscribeToRecurring(uid) {
     .onSnapshot((snapshot) => {
       currentRecurring = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       renderRecurringList(currentRecurring);
-      applyRecurringForThisMonth(uid);
     });
 }
 
@@ -393,8 +397,9 @@ tabButtons.forEach((btn) => {
 // ============================================================
 // MONTHLY ENVELOPE (salary-to-salary period tracking)
 // ============================================================
-let categoryChart = null;
 let historyChart = null;
+let categoryHistoryChart = null;
+let tapeCategoryChart = null;
 
 function computeEnvelopePeriods(transactions) {
   const sorted = [...transactions].sort((a, b) => a.date.localeCompare(b.date));
@@ -415,47 +420,26 @@ function computeEnvelopePeriods(transactions) {
     periodTx.filter((t) => t.type === "expense").forEach((t) => {
       byCategory[t.category] = (byCategory[t.category] || 0) + t.amount;
     });
-    return { start, end: end || todayStr, ongoing: end === null, income, expense, byCategory };
+     return { start, end: end || todayStr, ongoing: end === null, income, expense, byCategory, transactions: periodTx };
   });
 }
 
 function renderEnvelopeView() {
   const periods = computeEnvelopePeriods(currentTransactions);
   const rangeEl = document.getElementById("envelope-range");
-  const incomeEl = document.getElementById("envelope-income");
-  const spentEl = document.getElementById("envelope-spent");
-  const remainingEl = document.getElementById("envelope-remaining");
 
   if (periods.length === 0) {
     rangeEl.textContent = 'Log an entry with category "Salary" to start tracking';
-    incomeEl.textContent = "€0.00";
-    spentEl.textContent = "€0.00";
-    remainingEl.textContent = "€0.00";
-    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
     if (historyChart) { historyChart.destroy(); historyChart = null; }
+    if (categoryHistoryChart) { categoryHistoryChart.destroy(); categoryHistoryChart = null; }
     return;
   }
 
-  const current = periods[periods.length - 1];
-  rangeEl.textContent = `${formatDate(current.start)} – ${current.ongoing ? "ongoing" : formatDate(current.end)}`;
-  incomeEl.textContent = `€${current.income.toFixed(2)}`;
-  spentEl.textContent = `€${current.expense.toFixed(2)}`;
-  const remaining = current.income - current.expense;
-  remainingEl.textContent = `€${remaining.toFixed(2)}`;
-  remainingEl.style.color = remaining < 0 ? "#A13D2B" : "#4B7A52";
+  rangeEl.textContent = `${periods.length} pay period${periods.length > 1 ? "s" : ""} tracked`;
 
-  const catEntries = Object.entries(current.byCategory).sort((a, b) => b[1] - a[1]);
-  if (categoryChart) categoryChart.destroy();
-  categoryChart = new Chart(document.getElementById("category-chart"), {
-    type: "bar",
-    data: {
-      labels: catEntries.map((e) => e[0]),
-      datasets: [{ label: "Spent (€)", data: catEntries.map((e) => e[1]), backgroundColor: "#A13D2B" }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-  });
+  const recentPeriods = periods.slice(-12);
+  const palette = ["#A13D2B", "#A9862F", "#4B7A52", "#2C3B2E", "#7A5C3D", "#8C6E4B", "#5C7A5E", "#B08968", "#6B4F3A", "#3D5A40"];
 
-  const recentPeriods = periods.slice(-6);
   if (historyChart) historyChart.destroy();
   historyChart = new Chart(document.getElementById("history-chart"), {
     type: "bar",
@@ -468,4 +452,69 @@ function renderEnvelopeView() {
     },
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
+
+  const allCategories = [...new Set(recentPeriods.flatMap((p) => Object.keys(p.byCategory)))];
+
+  if (categoryHistoryChart) categoryHistoryChart.destroy();
+  categoryHistoryChart = new Chart(document.getElementById("category-history-chart"), {
+    type: "bar",
+    data: {
+      labels: recentPeriods.map((p) => formatDate(p.start)),
+      datasets: allCategories.map((cat, i) => ({
+        label: cat,
+        data: recentPeriods.map((p) => p.byCategory[cat] || 0),
+        backgroundColor: palette[i % palette.length]
+      }))
+    },
+    options: {
+      responsive: true,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }
+    }
+  });
+}
+function getCurrentPeriodTransactions() {
+  const periods = computeEnvelopePeriods(currentTransactions);
+  return periods.length ? periods[periods.length - 1].transactions : currentTransactions;
+}
+
+function renderTapeCategoryChart(transactions) {
+  const byCategory = {};
+  transactions.filter((t) => t.type === "expense").forEach((t) => {
+    byCategory[t.category] = (byCategory[t.category] || 0) + t.amount;
+  });
+  const entries = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+  const canvas = document.getElementById("tape-category-chart");
+  if (!canvas) return;
+  if (tapeCategoryChart) tapeCategoryChart.destroy();
+  if (entries.length === 0) return;
+
+  const palette = ["#A13D2B", "#A9862F", "#4B7A52", "#2C3B2E", "#7A5C3D", "#8C6E4B", "#5C7A5E", "#B08968", "#6B4F3A", "#3D5A40"];
+  tapeCategoryChart = new Chart(canvas, {
+    type: "doughnut",
+    data: {
+      labels: entries.map((e) => e[0]),
+      datasets: [{ data: entries.map((e) => e[1]), backgroundColor: entries.map((_, i) => palette[i % palette.length]) }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }
+    }
+  });
+}
+function applyRecurringForSalary(uid, salaryDate) {
+  currentRecurring
+    .filter((template) => template.type === "expense")
+    .forEach((template) => {
+      db.collection("users").doc(uid).collection("transactions").add({
+        type: template.type,
+        description: template.description,
+        category: template.category,
+        amount: template.amount,
+        date: salaryDate,
+        recurringId: template.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
 }
